@@ -14,7 +14,7 @@
 #include "cube.h"
 
 using namespace std;
-#define Array_Length 4
+#define Array_Length 5
 #define NUMBER_OF_PROGRAM_IDS 2
 
 //--------------------------------------------------------------------------------
@@ -77,8 +77,10 @@ vector<glm::vec3> normals[Array_Length];
 vector<glm::vec3> vertices[Array_Length];
 vector<glm::vec2> uvs[Array_Length];
 
-bool res = loadOBJ("teapot.obj", vertices[0], uvs[0], normals[0]);
-bool res1 = loadOBJ("torus.obj", vertices[1], uvs[1], normals[1]);
+bool res = loadOBJ("houseCube.obj", vertices[0], uvs[0], normals[0]);
+bool res1 = loadOBJ("houseRoof.obj", vertices[1], uvs[1], normals[1]);
+
+bool res2 = loadOBJ("torus.obj", vertices[2], uvs[2], normals[2]);
 
 
 //--------------------------------------------------------------------------------
@@ -133,7 +135,7 @@ void keyboardHandler(unsigned char key, int a, int b)
 
     if (key == 'c' || key == 'C') {
         LookAt_Eye_X = 0.0;
-        LookAt_Eye_Z = 1.0;
+        LookAt_Eye_Z = -1.0;
         LookAt_Eye_Y = 25.0;
 
         LookAt_Center_X = 0.0;
@@ -154,7 +156,7 @@ void InitMatrices()
         view = glm::lookAt(
             glm::vec3(LookAt_Eye_X, LookAt_Eye_Y, LookAt_Eye_Z),  // eye, waar staat de camera
             glm::vec3(LookAt_Center_X, LookAt_Center_Y, LookAt_Center_Z),  // center, waar kijkt ie naar toe?
-            glm::vec3(0.0, 1.0, 0.0));  // // up, Head is up (set to 0,-1,0 to look upside-down)
+            glm::vec3(0.0, 0.0, 1.0));  // // up, Head is up (set to 0,-1,0 to look upside-down)
         projection = glm::perspective(
             glm::radians(45.0f),
             1.0f * WIDTH / HEIGHT, 0.1f,
@@ -167,7 +169,7 @@ void InitMatrices()
 //--------------------------------------------------------------------------------
 // Rendering
 //--------------------------------------------------------------------------------
-
+bool firstrun = true;
 void Render()
 {
     glClearColor(0.0, 0.0, 0.0, 1.0);
@@ -186,17 +188,27 @@ void Render()
     for (int i = 0; i < Array_Length; i++) {
 
         // Attach to program_id
-        if (i == 0 || i == 1) {
+        if (i == 0 || i == 1 || i == 2) {
             glUseProgram(program_id[0]);
         }
-        else if (i == 2 || i == 3) {
+        else if (i == 3 || i == 4) {
             glUseProgram(program_id[1]);
         }
 
-        model[0] = glm::rotate(model[0], 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
-        model[1] = glm::translate(glm::mat4(), glm::vec3(3.0, 0.5, 0.0));
-        model[2] = glm::translate(glm::mat4(), glm::vec3(0.0, -2.0, 0.0));
-        model[3] = glm::translate(glm::mat4(), glm::vec3(7.0, -2.0, 0.0));
+
+        if (firstrun) {
+            model[2] = glm::translate(glm::mat4(), glm::vec3(-5.0, 4.0, 0.0));
+            firstrun = false;
+        }
+        else {
+            model[2] = glm::rotate(model[2], 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
+        }
+
+        model[0] = glm::translate(glm::mat4(), glm::vec3(7.0, 0.5, 0.0));
+        model[1] = glm::translate(glm::mat4(), glm::vec3(7.0, 0.5, 0.0));
+
+        model[3] = glm::translate(glm::mat4(), glm::vec3(0.0, 0.0, 0.0));
+        model[4] = glm::translate(glm::mat4(), glm::vec3(7.0, 0.0, -6.0));
         mv[i] = view * model[i];
 
 
@@ -205,9 +217,22 @@ void Render()
 
         glBindVertexArray(vao[i]);
 
-        if (i == 0 || i == 1) {
+        if (i == 0 || i == 1 || i == 2) {
+            if (i == 0) {
+                // add brick to housecube
+                glBindTexture(GL_TEXTURE_2D, texture_id[0]);
+            }
+            else if (i == 1) {
+                // add roof texture to roof shape
+                glBindTexture(GL_TEXTURE_2D, texture_id[1]);
+            }
+            else if (i == 2) {
+                // weird texture to weird shape.
+                glBindTexture(GL_TEXTURE_2D, texture_id[2]);
+            }
             glDrawArrays(GL_TRIANGLES, 0, vertices[i].size());
-        } else if(i == 2 || i == 3) {
+
+        } else if(i == 3 || i == 4) {
             glDrawElements(GL_TRIANGLES, sizeof(cube_elements) / sizeof(GLushort),
                 GL_UNSIGNED_SHORT, 0);
         }
@@ -287,7 +312,7 @@ void InitBuffers()
     glm::vec3 diffuse_color = glm::vec3{0.5,0.5,0};
 
     for (int i = 0; i < Array_Length; i++) {
-        if (i == 0 || i == 1) {
+        if (i == 0 || i == 1 || i == 2) {
             // vbo for uvs
             glGenBuffers(1, &vbo_uvs);
             glBindBuffer(GL_ARRAY_BUFFER, vbo_uvs);
@@ -309,7 +334,7 @@ void InitBuffers()
 
 
 
-        if (i == 0 || i == 1) {
+        if (i == 0 || i == 1 || i == 2) {
             // vbo for normals
             glGenBuffers(1, &vbo_normals);
             glBindBuffer(GL_ARRAY_BUFFER, vbo_normals);
@@ -321,7 +346,7 @@ void InitBuffers()
             normal_id = glGetAttribLocation(program_id[0], "normal");
 
         }
-        else if (i == 2 || i == 3) {
+        else if (i == 3 || i == 4) {
             //vbo for colors
             glGenBuffers(1, &vbo_colors);
             glBindBuffer(GL_ARRAY_BUFFER, vbo_colors);
@@ -338,11 +363,11 @@ void InitBuffers()
         }
 
 
-        if(i == 0 || i == 1){
+        if(i == 0 || i == 1 || i == 2){
             position_id = glGetAttribLocation(program_id[0], "position");
             color_id = glGetAttribLocation(program_id[0], "color");
         }
-        else if (i == 2 || i == 3) {
+        else if (i == 3 || i == 4) {
             position_id = glGetAttribLocation(program_id[1], "position");
             color_id = glGetAttribLocation(program_id[1], "color");
         }
@@ -362,7 +387,7 @@ void InitBuffers()
         glEnableVertexAttribArray(position_id);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        if (i == 0 || i == 1) {
+        if (i == 0 || i == 1 || i == 2) {
             // Bind normals to vao
             glBindBuffer(GL_ARRAY_BUFFER, vbo_normals);
             glVertexAttribPointer(normal_id, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -375,7 +400,7 @@ void InitBuffers()
             glEnableVertexAttribArray(uv_id);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
-        else if (i == 2 || i == 3) {
+        else if (i == 3 || i == 4) {
             // bind colors to vao
             glBindBuffer(GL_ARRAY_BUFFER, vbo_colors);
             glVertexAttribPointer(color_id, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -391,7 +416,7 @@ void InitBuffers()
         glBindVertexArray(0);
 
         // Make uniform vars
-        if(i == 0 || i == 1){
+        if(i == 0 || i == 1 || i == 2){
             uniform_mv = glGetUniformLocation(program_id[0], "mv");
             GLuint uniform_proj = glGetUniformLocation(program_id[0], "projection");
             GLuint uniform_light_pos = glGetUniformLocation(program_id[0], "light_pos");
@@ -412,7 +437,7 @@ void InitBuffers()
             glUniform3fv(uniform_material_ambient, 1, glm::value_ptr(ambient_color));
             glUniform3fv(uniform_material_diffuse, 1, glm::value_ptr(diffuse_color));
         }
-        else if (i == 2 || i == 3) {
+        else if (i == 3 || i == 4) {
             uniform_mv = glGetUniformLocation(program_id[1], "mv");
             GLuint uniform_proj = glGetUniformLocation(program_id[1], "projection");
             GLuint uniform_light_pos = glGetUniformLocation(program_id[1], "light_pos");
@@ -440,10 +465,12 @@ void InitBuffers()
 }
 
 void InitObjects() {
+    glGenTextures(3, texture_id);
     texture_id[0] = loadBMP("Yellobrk.bmp");
-
-    vertices[2] = Create_Cube_Vertices(10, 1, 4);
-    vertices[3] = Create_Cube_Vertices(4, 1, 15);
+    texture_id[1] = loadBMP("roof.bmp");
+    texture_id[2] = loadBMP("uvtemplate.bmp");
+    vertices[3] = Create_Cube_Vertices(10, 1, 4);
+    vertices[4] = Create_Cube_Vertices(4, 1, 16);
 }
 
 
