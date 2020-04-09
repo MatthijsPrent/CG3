@@ -148,17 +148,18 @@ void keyboardHandler(unsigned char key, int a, int b)
 
 void InitMatrices()
 {
-    model[0] = glm::mat4();
-    view = glm::lookAt(
-        glm::vec3(LookAt_Eye_X, LookAt_Eye_Y, LookAt_Eye_Z),  // eye, waar staat de camera
-        glm::vec3(LookAt_Center_X, LookAt_Center_Y, LookAt_Center_Z),  // center, waar kijkt ie naar toe?
-        glm::vec3(0.0, 1.0, 0.0));  // // up, Head is up (set to 0,-1,0 to look upside-down)
-    projection = glm::perspective(
-        glm::radians(45.0f),
-        1.0f * WIDTH / HEIGHT, 0.1f,
-        30.0f);
+    
     for (int i = 0; i < Array_Length; i++) {
-        glm::mat4 mv = view * model[i];
+        model[i] = glm::mat4();
+        view = glm::lookAt(
+            glm::vec3(LookAt_Eye_X, LookAt_Eye_Y, LookAt_Eye_Z),  // eye, waar staat de camera
+            glm::vec3(LookAt_Center_X, LookAt_Center_Y, LookAt_Center_Z),  // center, waar kijkt ie naar toe?
+            glm::vec3(0.0, 1.0, 0.0));  // // up, Head is up (set to 0,-1,0 to look upside-down)
+        projection = glm::perspective(
+            glm::radians(45.0f),
+            1.0f * WIDTH / HEIGHT, 0.1f,
+            30.0f);
+         mv[i] = view * model[i];
     }
 }
 
@@ -192,7 +193,7 @@ void Render()
             glUseProgram(program_id[1]);
         }
 
-        model[i] = glm::rotate(model[i], 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
+        model[0] = glm::rotate(model[0], 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
         model[1] = glm::translate(glm::mat4(), glm::vec3(3.0, 0.5, 0.0));
         model[2] = glm::translate(glm::mat4(), glm::vec3(0.0, -2.0, 0.0));
         model[3] = glm::translate(glm::mat4(), glm::vec3(7.0, -2.0, 0.0));
@@ -337,10 +338,13 @@ void InitBuffers()
         }
 
 
-        // Get vertex attributes
-        for (int j = 0; j < NUMBER_OF_PROGRAM_IDS; j++) {                                                // This loop looks buggy...
-            position_id = glGetAttribLocation(program_id[j], "position");
-            color_id = glGetAttribLocation(program_id[j], "color");
+        if(i == 0 || i == 1){
+            position_id = glGetAttribLocation(program_id[0], "position");
+            color_id = glGetAttribLocation(program_id[0], "color");
+        }
+        else if (i == 2 || i == 3) {
+            position_id = glGetAttribLocation(program_id[1], "position");
+            color_id = glGetAttribLocation(program_id[1], "color");
         }
 
         // Allocate memory for vao
@@ -349,7 +353,7 @@ void InitBuffers()
         // Bind to vao
         glBindVertexArray(vao[i]);
 
-        mv[i] = view * model[i];
+        //mv[i] = view * model[i];
 
 
         // Bind vertices to vao
@@ -372,26 +376,55 @@ void InitBuffers()
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
         else if (i == 2 || i == 3) {
-            // bind colors to vao????????????
+            // bind colors to vao
             glBindBuffer(GL_ARRAY_BUFFER, vbo_colors);
             glVertexAttribPointer(color_id, 3, GL_FLOAT, GL_FALSE, 0, 0);
             glEnableVertexAttribArray(color_id);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+            // bind elements to VAO
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_elements);
 
         }
+
+        // Stop bind to vao
+        glBindVertexArray(0);
+
         // Make uniform vars
-        for (int j = 0; j < NUMBER_OF_PROGRAM_IDS; j++) {
-            uniform_mv = glGetUniformLocation(program_id[j], "mv");
-            GLuint uniform_proj = glGetUniformLocation(program_id[j], "projection");
-            GLuint uniform_light_pos = glGetUniformLocation(program_id[j], "light_pos");
-            GLuint uniform_material_ambient = glGetUniformLocation(program_id[j],
+        if(i == 0 || i == 1){
+            uniform_mv = glGetUniformLocation(program_id[0], "mv");
+            GLuint uniform_proj = glGetUniformLocation(program_id[0], "projection");
+            GLuint uniform_light_pos = glGetUniformLocation(program_id[0], "light_pos");
+            GLuint uniform_material_ambient = glGetUniformLocation(program_id[0],
                 "mat_ambient");
-            GLuint uniform_material_diffuse = glGetUniformLocation(program_id[j],
+            GLuint uniform_material_diffuse = glGetUniformLocation(program_id[0],
                 "mat_diffuse");
 
-            glUseProgram(program_id[j]);
+            mv[i] = view * model[i];
+
+
+
+            glUseProgram(program_id[0]);
+            // Fill uniform vars
+            glUniformMatrix4fv(uniform_mv, 1, GL_FALSE, glm::value_ptr(mv[i]));
+            glUniformMatrix4fv(uniform_proj, 1, GL_FALSE, glm::value_ptr(projection));
+            glUniform3fv(uniform_light_pos, 1, glm::value_ptr(light_position));
+            glUniform3fv(uniform_material_ambient, 1, glm::value_ptr(ambient_color));
+            glUniform3fv(uniform_material_diffuse, 1, glm::value_ptr(diffuse_color));
+        }
+        else if (i == 2 || i == 3) {
+            uniform_mv = glGetUniformLocation(program_id[1], "mv");
+            GLuint uniform_proj = glGetUniformLocation(program_id[1], "projection");
+            GLuint uniform_light_pos = glGetUniformLocation(program_id[1], "light_pos");
+            GLuint uniform_material_ambient = glGetUniformLocation(program_id[1],
+                "mat_ambient");
+            GLuint uniform_material_diffuse = glGetUniformLocation(program_id[1],
+                "mat_diffuse");
+
+            mv[i] = view * model[i];
+
+
+            glUseProgram(program_id[1]);
             // Fill uniform vars
             glUniformMatrix4fv(uniform_mv, 1, GL_FALSE, glm::value_ptr(mv[i]));
             glUniformMatrix4fv(uniform_proj, 1, GL_FALSE, glm::value_ptr(projection));
@@ -402,8 +435,7 @@ void InitBuffers()
     }
 
 
-    // Stop bind to vao
-    glBindVertexArray(0);
+
 
 }
 
