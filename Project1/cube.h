@@ -21,6 +21,19 @@ const GLfloat colors[] = {
     0.0, 0.0, 0.20,
 };
 
+const GLfloat colors2[] = {
+    // front colors
+    0.20, 0.20, 0.40,
+    0.20, 0.20, 0.40,
+    0.20, 0.20, 0.40,
+    0.20, 0.20, 0.40,
+    // back colors
+    0.20, 0.20, 0.40,
+    0.20, 0.20, 0.40,
+    0.20, 0.20, 0.40,
+    0.20, 0.20, 0.40,
+};
+
 
 
 vector<glm::vec3> Create_Cube_Vertices(float width, float height, float depth);
